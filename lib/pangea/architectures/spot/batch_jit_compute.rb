@@ -2,6 +2,7 @@
 
 require 'pangea/architectures/spot/types'
 require 'pangea/architectures/spot/topology_helpers'
+require 'pangea/architectures/spot/alert_layer'
 require 'pangea/spot/catalog'
 require 'pangea/spot/allocation'
 
@@ -105,6 +106,20 @@ module Pangea
             tags: tags.merge(Name: "#{name}-ce", BatchQueue: name),
           })
 
+          # ── Alert layer ──────────────────────────────────────────────
+          # AWS Batch has NATIVE interruption handling: interrupted spot
+          # jobs are automatically re-queued by the Batch scheduler, no
+          # external telegraph needed. Default to `required: false` +
+          # `:none` source/forwarder — the opt-out is the CORRECT choice
+          # here. Caller can still override (e.g. to :nth_queue) if
+          # downstream observability pipelines want the events.
+          alert_cfg = (config[:alert_layer] || {}).dup
+          alert_cfg[:name] ||= "#{name}-alert"
+          alert_cfg[:source] ||= :none
+          alert_cfg[:forwarder] ||= :none
+          alert_cfg[:required] = false if alert_cfg[:required].nil?
+          alert_layer_result = AlertLayer.build(synth, alert_cfg, asg_name: nil, tags: tags.merge(BatchQueue: name))
+
           job_queue = synth.aws_batch_job_queue(:"#{name}-queue", {
             name: "#{name}-queue",
             state: config[:queue_state],
@@ -119,6 +134,7 @@ module Pangea
           {
             compute_env: compute_env,
             job_queue: job_queue,
+            alert_layer_result: alert_layer_result,
             instance_types: resolved[:instance_types],
             profile: profile_key,
             category: resolved[:category],

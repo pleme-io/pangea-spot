@@ -45,6 +45,11 @@ lib/
   - ✓ FluxJitController (Git-backed controller pool, min=1)
   - ✓ MlJitTraining (:checkpoint_job + S3 checkpoint bucket + CheckpointPolicy tags)
   - ✓ BatchJitCompute (native aws_batch_compute_environment SPOT+EC2 modes)
+- **AlertLayer (Phase 5b Track A) ✓** — mandatory interruption telegraph
+  wired into every architecture. `AlertLayer.build(synth, cfg, asg_name:)`
+  emits SQS + EB rule + IAM policy for `:nth_queue`, none for `:nth_imds`,
+  ASG tags for `:spot_io_ocean` / `:cast_ai`. Defaults per workload class
+  (K8s: :nth_imds, CI/ML: :nth_queue, Batch: opt-out per native re-queue).
 - Phase 5 — cross-provider (GCP Spot VMs, Azure Spot VMs) as new
   substrate providers under the same JIT typescape
 - Phase 6 — intelligence (PriceSnapshot, PlacementScore, SavingsReport,

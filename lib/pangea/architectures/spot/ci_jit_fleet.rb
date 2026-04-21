@@ -4,6 +4,7 @@ require 'pangea/architectures/spot/types'
 require 'pangea/architectures/spot/topology_helpers'
 require 'pangea/architectures/spot/ec2_fleet'
 require 'pangea/architectures/spot/interruption_handler'
+require 'pangea/architectures/spot/alert_layer'
 require 'pangea/spot/catalog'
 
 module Pangea
@@ -115,10 +116,22 @@ module Pangea
             tags: tags.merge(CiPool: name),
           })
 
+          # ── Mandatory alert layer (default :nth_queue for CI) ─────────
+          # CI fleets are typically multi-node; centralized queue-mode
+          # NTH is cheaper than per-node DaemonSet. Caller can override
+          # to :nth_imds for smaller pools or :none if the runner agent
+          # already handles interruption (rare).
+          alert_cfg = (config[:alert_layer] || {}).dup
+          alert_cfg[:name] ||= "#{name}-alert"
+          alert_cfg[:source] ||= :aws_eventbridge_sqs
+          alert_cfg[:forwarder] ||= :nth_queue
+          alert_layer_result = AlertLayer.build(synth, alert_cfg, asg_name: nil, tags: tags.merge(CiPool: name))
+
           {
             launch_template: lt,
             fleet_result: fleet_result,
             interruption_handler_result: interruption_result,
+            alert_layer_result: alert_layer_result,
             instance_types: profile_entry[:instance_types],
             profile: profile_key,
             category: category,

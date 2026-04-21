@@ -73,6 +73,7 @@ module Pangea
             desired_capacity: config[:desired_capacity],
             node_labels: { 'service' => 'zot' },
             node_taints: [],
+            alert_layer: config[:alert_layer] || {},
             tags: tags.merge(extra_tags),
           })
 

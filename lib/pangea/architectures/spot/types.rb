@@ -71,6 +71,50 @@ module Pangea
           :lowest_price,
         )
 
+        # ── AlertLayer — mandatory interruption telegraph ────────────────
+        #
+        # Every spot/JIT workload ALWAYS emits an alert layer so cloud
+        # interruption notices telegraph into the cluster orchestrator
+        # (Kubernetes / Nomad / webhook). Mirrors the typed primitives
+        # in `arch-synthesizer/src/spot/alerting.rs`. See the user memory
+        # entry `feedback_spot_alert_layer_mandatory.md` for the rule.
+
+        AlertSourceKind = Types::Coercible::Symbol.default(:aws_imds).enum(
+          :aws_imds,
+          :aws_eventbridge_sqs,
+          :aws_cloudwatch_events,
+          :gcp_metadata_server,
+          :azure_metadata_service,
+          :vendor_spot_io,
+          :vendor_cast_ai,
+          :custom,
+          :none,
+        )
+
+        AlertForwarderKind = Types::Coercible::Symbol.default(:nth_imds).enum(
+          :nth_imds,
+          :nth_queue,
+          :karpenter_builtin,
+          :spot_io_ocean,
+          :cast_ai,
+          :custom_lambda,
+          :none,
+        )
+
+        class AlertLayerConfig < Config
+          attribute? :name,            Types::String.optional.default(nil)
+          attribute? :source,          AlertSourceKind
+          attribute? :forwarder,       AlertForwarderKind
+          attribute? :sinks,           Types::Array.of(Types::Hash).default([].freeze)
+          attribute? :sqs_queue_arn,   Types::String.optional.default(nil)
+          attribute? :k8s_endpoint,    Types::String.optional.default(nil)
+          attribute? :nomad_endpoint,  Types::String.optional.default(nil)
+          attribute? :webhook_url,     Types::String.optional.default(nil)
+          attribute? :include_rebalance_events, Types::Bool.default(true)
+          attribute? :required,        Types::Bool.default(true)
+          attribute? :tags,            Types::Hash.default({}.freeze)
+        end
+
         # ── MixedInstancesAsg — ASG with mixed-instances policy ──────────
         #
         # Continuous-capacity pattern. The only ASG shape that can have a
@@ -189,6 +233,9 @@ module Pangea
           attribute? :lifecycle_heartbeat_timeout,           Types::Integer.default(300)
           attribute? :spot_max_price,                        Types::String.optional.default(nil)
           attribute? :root_volume_gb,                        Types::Integer.default(50)
+          # Mandatory alert layer (per feedback_spot_alert_layer_mandatory).
+          # Default {} → AlertLayerConfig defaults (aws_imds + nth_imds).
+          attribute? :alert_layer,                           Types::Hash.default({}.freeze)
           attribute? :tags,                                  Types::Hash.default({}.freeze)
         end
 
@@ -214,6 +261,7 @@ module Pangea
           attribute? :include_rebalance_events,              Types::Bool.default(true)
           attribute? :spot_max_price,                        Types::String.optional.default(nil)
           attribute? :root_volume_gb,                        Types::Integer.default(30)
+          attribute? :alert_layer,                           Types::Hash.default({}.freeze)
           attribute? :tags,                                  Types::Hash.default({}.freeze)
         end
 
@@ -251,6 +299,7 @@ module Pangea
           attribute? :service_port,                          Types::Integer.default(8080)
           attribute? :key_name,                              Types::String.optional.default(nil)
           attribute? :user_data_base64,                      Types::String.optional.default(nil)
+          attribute? :alert_layer,                           Types::Hash.default({}.freeze)
           attribute? :tags,                                  Types::Hash.default({}.freeze)
         end
 
@@ -274,6 +323,7 @@ module Pangea
           attribute? :htpasswd_secret_arn,                   Types::String.optional.default(nil)
           attribute? :key_name,                              Types::String.optional.default(nil)
           attribute? :user_data_base64,                      Types::String.optional.default(nil)
+          attribute? :alert_layer,                           Types::Hash.default({}.freeze)
           attribute? :tags,                                  Types::Hash.default({}.freeze)
         end
 
@@ -308,6 +358,7 @@ module Pangea
           )
           attribute? :key_name,                              Types::String.optional.default(nil)
           attribute? :user_data_base64,                      Types::String.optional.default(nil)
+          attribute? :alert_layer,                           Types::Hash.default({}.freeze)
           attribute? :tags,                                  Types::Hash.default({}.freeze)
         end
 
@@ -330,6 +381,7 @@ module Pangea
           attribute? :bid_percentage,                        Types::Integer.optional.default(nil)
           attribute? :queue_priority,                        Types::Integer.default(100)
           attribute? :queue_state,                           Types::String.default('ENABLED')
+          attribute? :alert_layer,                           Types::Hash.default({}.freeze)
           attribute? :tags,                                  Types::Hash.default({}.freeze)
         end
 
@@ -352,6 +404,7 @@ module Pangea
           attribute? :git_repo_url,                          Types::String.optional.default(nil)
           attribute? :key_name,                              Types::String.optional.default(nil)
           attribute? :user_data_base64,                      Types::String.optional.default(nil)
+          attribute? :alert_layer,                           Types::Hash.default({}.freeze)
           attribute? :tags,                                  Types::Hash.default({}.freeze)
         end
       end

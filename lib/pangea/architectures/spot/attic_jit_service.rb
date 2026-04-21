@@ -77,6 +77,7 @@ module Pangea
             desired_capacity: config[:desired_capacity],
             node_labels: { 'service' => 'attic' },
             node_taints: [],
+            alert_layer: config[:alert_layer] || {},
             tags: tags.merge(
               Service: 'attic',
               AtticBucket: bucket_name,

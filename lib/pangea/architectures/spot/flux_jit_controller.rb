@@ -66,6 +66,7 @@ module Pangea
             node_labels: node_labels,
             node_taints: node_taints,
             lambda_drain_arn: config[:lambda_drain_arn],
+            alert_layer: config[:alert_layer] || {},
             tags: extra_tags,
           })
 

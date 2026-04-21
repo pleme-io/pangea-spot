@@ -4,6 +4,7 @@ require 'pangea/architectures/spot/types'
 require 'pangea/architectures/spot/topology_helpers'
 require 'pangea/architectures/spot/mixed_instances_asg'
 require 'pangea/architectures/spot/interruption_handler'
+require 'pangea/architectures/spot/alert_layer'
 require 'pangea/spot/catalog'
 
 module Pangea
@@ -129,10 +130,23 @@ module Pangea
 
           interruption_result = InterruptionHandler.build(synth, handler_cfg)
 
+          # ── Mandatory interruption alert layer ────────────────────────
+          # Default shape per workload: K8s node pools use IMDS-mode NTH
+          # (simplest, per-node DaemonSet in cluster). Caller can switch
+          # to :nth_queue for centralized handling or :spot_io_ocean if
+          # the cluster is vendor-managed. See
+          # `feedback_spot_alert_layer_mandatory.md` for the rule.
+          alert_cfg = (config[:alert_layer] || {}).dup
+          alert_cfg[:name] ||= "#{name}-alert"
+          alert_cfg[:source] ||= :aws_imds
+          alert_cfg[:forwarder] ||= :nth_imds
+          alert_layer_result = AlertLayer.build(synth, alert_cfg, asg_name: asg_name, tags: tags)
+
           {
             launch_template: lt,
             asg_result: asg_result,
             interruption_handler_result: interruption_result,
+            alert_layer_result: alert_layer_result,
             instance_types: profile_entry[:instance_types],
             profile: profile_key,
             category: category,

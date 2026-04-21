@@ -96,6 +96,13 @@ module Pangea
             node_taints: config[:node_taints],
             interruption_policy: :checkpoint_job,
             lambda_function_arn: config[:lambda_checkpoint_arn],
+            # ML training pools default to queue-mode NTH: centralized
+            # SQS listener for the whole training fleet (cheaper than
+            # per-node DaemonSet on GPU hosts). Caller can override.
+            alert_layer: (config[:alert_layer] || {}).merge(
+              source: (config[:alert_layer] || {})[:source] || :aws_eventbridge_sqs,
+              forwarder: (config[:alert_layer] || {})[:forwarder] || :nth_queue,
+            ),
             tags: tags.merge(checkpoint_tags),
           })
 
