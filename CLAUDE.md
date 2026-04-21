@@ -20,21 +20,36 @@ lib/
   pangea/
     spot/
       catalog.rb                         # 22 profiles × 9 categories
-      allocation.rb                      # 5 AWS strategies + defaults
+      allocation.rb                      # 5 AWS strategies + defaults + to_aws/to_spot_fleet
     architectures/
       spot/
+        types.rb                         # Dry::Struct configs + policy/strategy/fleet-type enums
+        topology_helpers.rb              # shared profile + allocation + LT resolution
         interruption_handler.rb          # 4 policies (graceful, drain_k8s, checkpoint, naive)
+        mixed_instances_asg.rb           # ASG w/ mixed-instances-policy (continuous capacity)
+        ec2_fleet.rb                     # aws_ec2_fleet (maintain/request/instant)
+        spot_fleet.rb                    # aws_spot_fleet_request (legacy, migration parity)
 ```
 
 ## Phased rollout
 
 - **Phase 1 ✓** — catalog + allocation + InterruptionHandler
 - **Phase 2 ✓** — extracted from pangea-architectures into this gem
-- Phase 3 — topology architectures (MixedInstancesAsg, Ec2Fleet, SpotFleet)
-- Phase 4 — workload architectures (K8sSpotWorkers, CiSpotFleet,
-  MlTrainingCluster, BatchComputeEnv, EphemeralRunner)
-- Phase 5 — cross-provider (GCP Spot VMs, Azure Spot VMs)
-- Phase 6 — intelligence (PriceSnapshot, PlacementScore, SavingsReport)
+- **Phase 3 ✓** — topology architectures (MixedInstancesAsg + Ec2Fleet + SpotFleet)
+- Phase 4 — workload architectures reshaped around JIT Infrastructure
+  (K8sJitNodePool, CiJitFleet, PackerJitBake, AtticJitService,
+  ZotJitService, FluxJitController, MlJitTraining, BatchJitCompute)
+- Phase 5 — cross-provider (GCP Spot VMs, Azure Spot VMs) as new
+  substrate providers under the same JIT typescape
+- Phase 6 — intelligence (PriceSnapshot, PlacementScore, SavingsReport,
+  cost-per-wake, interruption-vs-wake tradeoff)
+
+See `theory_jit_infrastructure.md` in user auto-memory for the
+foundational framing — every compute unit is a typed composition of
+auction substrate + breathability + state externalization + interruption
+policy + substrate provider. pangea-spot is the auction-substrate layer;
+pangea-jit (future companion gem) will compose it into workload-level
+JIT architectures.
 
 ## Testing
 

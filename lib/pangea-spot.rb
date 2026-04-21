@@ -30,6 +30,10 @@ end
 require 'pangea/spot/catalog'
 require 'pangea/spot/allocation'
 require 'pangea/architectures/spot/types'
+require 'pangea/architectures/spot/topology_helpers'
 require 'pangea/architectures/spot/interruption_handler'
+require 'pangea/architectures/spot/mixed_instances_asg'
+require 'pangea/architectures/spot/ec2_fleet'
+require 'pangea/architectures/spot/spot_fleet'
 
 require 'pangea-spot/version'

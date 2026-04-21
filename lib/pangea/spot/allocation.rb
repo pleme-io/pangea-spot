@@ -53,6 +53,20 @@ module Pangea
       def self.default_for(category)
         DEFAULTS.fetch(category.to_sym) { :capacity_optimized }
       end
+
+      # Legacy aws_spot_fleet_request resource takes the allocation
+      # strategy in camelCase form (capacityOptimized,
+      # priceCapacityOptimized, ...) — distinct from the hyphen form
+      # the mixed-instances-policy + EC2 Fleet API use. Keep both
+      # mappings here so SpotFleet callers don't hand-roll the
+      # translation.
+      def self.to_spot_fleet(strategy)
+        raise ArgumentError, "unknown strategy #{strategy.inspect}" unless STRATEGIES.include?(strategy.to_sym)
+
+        strategy.to_s.split('_').each_with_index.map { |part, i|
+          i.zero? ? part : part.capitalize
+        }.join
+      end
     end
   end
 end
