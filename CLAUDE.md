@@ -36,9 +36,12 @@ lib/
 - **Phase 1 ✓** — catalog + allocation + InterruptionHandler
 - **Phase 2 ✓** — extracted from pangea-architectures into this gem
 - **Phase 3 ✓** — topology architectures (MixedInstancesAsg + Ec2Fleet + SpotFleet)
-- Phase 4 — workload architectures reshaped around JIT Infrastructure
-  (K8sJitNodePool, CiJitFleet, PackerJitBake, AtticJitService,
-  ZotJitService, FluxJitController, MlJitTraining, BatchJitCompute)
+- **Phase 4 (3/8)** — JIT workload architectures:
+  - ✓ K8sJitNodePool (MixedInstancesAsg + :drain_k8s_node handler)
+  - ✓ CiJitFleet (Ec2Fleet + :naive_terminate handler)
+  - ✓ PackerJitBake (SSM-published spot knobs for typed Packer arch)
+  - ☐ AtticJitService, ZotJitService, FluxJitController (batch 2 — breathable daemons)
+  - ☐ MlJitTraining, BatchJitCompute (batch 3 — heavy compute)
 - Phase 5 — cross-provider (GCP Spot VMs, Azure Spot VMs) as new
   substrate providers under the same JIT typescape
 - Phase 6 — intelligence (PriceSnapshot, PlacementScore, SavingsReport,

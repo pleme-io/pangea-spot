@@ -35,5 +35,8 @@ require 'pangea/architectures/spot/interruption_handler'
 require 'pangea/architectures/spot/mixed_instances_asg'
 require 'pangea/architectures/spot/ec2_fleet'
 require 'pangea/architectures/spot/spot_fleet'
+require 'pangea/architectures/spot/k8s_jit_node_pool'
+require 'pangea/architectures/spot/ci_jit_fleet'
+require 'pangea/architectures/spot/packer_jit_bake'
 
 require 'pangea-spot/version'
