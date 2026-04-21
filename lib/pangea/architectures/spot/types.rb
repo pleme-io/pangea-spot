@@ -174,6 +174,16 @@ module Pangea
           attribute? :on_demand_percentage_above_base,       Types::Integer.default(0)
           attribute? :node_labels,                           Types::Hash.default({}.freeze)
           attribute? :node_taints,                           Types::Array.default([].freeze)
+          # Override the interruption policy. Default :drain_k8s_node
+          # (graceful pod drain via Lambda + ASG lifecycle hook). Valid
+          # alternates: :checkpoint_job (ML training), :graceful_terminate
+          # (SNS fanout), :naive_terminate (observability-only EB rule).
+          attribute? :interruption_policy,                   SpotPolicySym.optional.default(nil)
+          # Generic lambda ARN slot — used by :drain_k8s_node (drain Lambda)
+          # AND :checkpoint_job (checkpoint Lambda). Back-compat alias
+          # `lambda_drain_arn` still accepted; when both are set, the
+          # explicit lambda_function_arn wins.
+          attribute? :lambda_function_arn,                   Types::String.optional.default(nil)
           attribute? :lambda_drain_arn,                      Types::String.optional.default(nil)
           attribute? :include_rebalance_events,              Types::Bool.default(true)
           attribute? :lifecycle_heartbeat_timeout,           Types::Integer.default(300)
@@ -264,6 +274,62 @@ module Pangea
           attribute? :htpasswd_secret_arn,                   Types::String.optional.default(nil)
           attribute? :key_name,                              Types::String.optional.default(nil)
           attribute? :user_data_base64,                      Types::String.optional.default(nil)
+          attribute? :tags,                                  Types::Hash.default({}.freeze)
+        end
+
+        # ── CheckpointPolicy — ML training / batch job checkpointing ─────
+        #
+        # Encapsulates the cadence + storage + resume semantics for
+        # workloads that must survive spot reclaims mid-execution.
+        class CheckpointPolicyConfig < Config
+          attribute? :cadence_minutes,     Types::Integer.default(30)
+          attribute? :storage_uri,         Types::String.optional.default(nil)
+          attribute? :resume_from_latest,  Types::Bool.default(true)
+        end
+
+        # ── MlJitTraining — spot-backed ML training pool ─────────────────
+        class MlJitTrainingConfig < Config
+          attribute  :name,                                  Types::String
+          attribute? :profile,                               Types::Coercible::Symbol.default(:karpenter_gpu)
+          attribute  :image_id,                              Types::String
+          attribute  :instance_profile_arn,                  Types::String
+          attribute  :security_group_ids,                    Types::Array.of(Types::String)
+          attribute  :subnet_ids,                            Types::Array.of(Types::String)
+          attribute? :min_size,                              Types::Integer.default(0)
+          attribute? :max_size,                              Types::Integer.default(4)
+          attribute? :desired_capacity,                      Types::Integer.default(0)
+          attribute? :checkpoint_bucket_name,                Types::String.optional.default(nil)
+          attribute? :checkpoint_cadence_minutes,            Types::Integer.default(30)
+          attribute? :resume_from_latest,                    Types::Bool.default(true)
+          attribute? :lambda_checkpoint_arn,                 Types::String.optional.default(nil)
+          attribute? :node_labels,                           Types::Hash.default({ 'workload' => 'ml-training' }.freeze)
+          attribute? :node_taints,                           Types::Array.default(
+            [{ key: 'workload', value: 'ml-training', effect: 'NoSchedule' }].freeze,
+          )
+          attribute? :key_name,                              Types::String.optional.default(nil)
+          attribute? :user_data_base64,                      Types::String.optional.default(nil)
+          attribute? :tags,                                  Types::Hash.default({}.freeze)
+        end
+
+        # ── BatchJitCompute — AWS Batch spot compute environment ─────────
+        BatchComputeTypeSym = Types::Coercible::Symbol.default(:spot).enum(:spot, :ec2)
+
+        class BatchJitComputeConfig < Config
+          attribute  :name,                                  Types::String
+          attribute? :profile,                               Types::Coercible::Symbol.default(:genomics_spot)
+          attribute  :subnet_ids,                            Types::Array.of(Types::String)
+          attribute  :security_group_ids,                    Types::Array.of(Types::String)
+          attribute  :instance_role_arn,                     Types::String
+          attribute  :service_role_arn,                      Types::String
+          attribute? :compute_type,                          BatchComputeTypeSym
+          attribute? :min_vcpus,                             Types::Integer.default(0)
+          attribute? :max_vcpus,                             Types::Integer.default(256)
+          attribute? :desired_vcpus,                         Types::Integer.default(0)
+          attribute? :allocation_strategy,                   SpotAllocationStrategySym.optional.default(nil)
+          attribute? :spot_iam_fleet_role_arn,               Types::String.optional.default(nil)
+          attribute? :bid_percentage,                        Types::Integer.optional.default(nil)
+          attribute? :queue_priority,                        Types::Integer.default(100)
+          attribute? :queue_state,                           Types::String.default('ENABLED')
           attribute? :tags,                                  Types::Hash.default({}.freeze)
         end
 

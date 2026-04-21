@@ -42,5 +42,7 @@ require 'pangea/architectures/spot/breathability_helpers'
 require 'pangea/architectures/spot/attic_jit_service'
 require 'pangea/architectures/spot/zot_jit_service'
 require 'pangea/architectures/spot/flux_jit_controller'
+require 'pangea/architectures/spot/ml_jit_training'
+require 'pangea/architectures/spot/batch_jit_compute'
 
 require 'pangea-spot/version'

@@ -109,15 +109,23 @@ module Pangea
           # lifecycle hook, so we need the concrete string here.
           asg_name = "#{name}-asg"
 
+          # Interruption policy — default :drain_k8s_node preserves the
+          # K8s drain semantics. Callers like MlJitTraining override to
+          # :checkpoint_job so spot reclaims trigger a checkpoint Lambda
+          # instead of a cordon+drain. Lambda ARN resolves explicit
+          # lambda_function_arn first, falls back to lambda_drain_arn
+          # (back-compat alias).
+          lambda_arn = config[:lambda_function_arn] || config[:lambda_drain_arn]
+
           handler_cfg = {
             name: name,
-            policy: :drain_k8s_node,
+            policy: config[:interruption_policy] || :drain_k8s_node,
             asg_name: asg_name,
             lifecycle_heartbeat_timeout: config[:lifecycle_heartbeat_timeout],
             include_rebalance_events: config[:include_rebalance_events],
             tags: tags.merge(NodePool: name),
           }
-          handler_cfg[:lambda_function_arn] = config[:lambda_drain_arn] if config[:lambda_drain_arn]
+          handler_cfg[:lambda_function_arn] = lambda_arn if lambda_arn
 
           interruption_result = InterruptionHandler.build(synth, handler_cfg)
 
