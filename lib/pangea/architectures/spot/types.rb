@@ -222,6 +222,72 @@ module Pangea
           attribute? :ssm_param_prefix,                      Types::String.optional.default(nil)
           attribute? :tags,                                  Types::Hash.default({}.freeze)
         end
+
+        # ── AtticJitService — breathable Nix binary cache ────────────────
+        class AtticJitServiceConfig < Config
+          attribute  :name,                                  Types::String
+          attribute? :profile,                               Types::Coercible::Symbol.default(:karpenter_general)
+          attribute  :image_id,                              Types::String
+          attribute  :instance_profile_arn,                  Types::String
+          attribute  :security_group_ids,                    Types::Array.of(Types::String)
+          attribute  :subnet_ids,                            Types::Array.of(Types::String)
+          attribute  :domain,                                Types::String
+          attribute  :public_zone_id,                        Types::String
+          attribute? :s3_bucket_name,                        Types::String.optional.default(nil)
+          attribute? :min_size,                              Types::Integer.default(0)
+          attribute? :max_size,                              Types::Integer.default(2)
+          attribute? :desired_capacity,                      Types::Integer.default(0)
+          attribute? :idle_threshold_secs,                   Types::Integer.default(1800)
+          attribute? :service_port,                          Types::Integer.default(8080)
+          attribute? :key_name,                              Types::String.optional.default(nil)
+          attribute? :user_data_base64,                      Types::String.optional.default(nil)
+          attribute? :tags,                                  Types::Hash.default({}.freeze)
+        end
+
+        # ── ZotJitService — breathable OCI registry ──────────────────────
+        class ZotJitServiceConfig < Config
+          attribute  :name,                                  Types::String
+          attribute? :profile,                               Types::Coercible::Symbol.default(:karpenter_general)
+          attribute  :image_id,                              Types::String
+          attribute  :instance_profile_arn,                  Types::String
+          attribute  :security_group_ids,                    Types::Array.of(Types::String)
+          attribute  :subnet_ids,                            Types::Array.of(Types::String)
+          attribute  :domain,                                Types::String
+          attribute  :public_zone_id,                        Types::String
+          attribute? :s3_bucket_name,                        Types::String.optional.default(nil)
+          attribute? :min_size,                              Types::Integer.default(0)
+          attribute? :max_size,                              Types::Integer.default(2)
+          attribute? :desired_capacity,                      Types::Integer.default(0)
+          attribute? :idle_threshold_secs,                   Types::Integer.default(1800)
+          attribute? :service_port,                          Types::Integer.default(5000)
+          attribute? :acm_cert_arn,                          Types::String.optional.default(nil)
+          attribute? :htpasswd_secret_arn,                   Types::String.optional.default(nil)
+          attribute? :key_name,                              Types::String.optional.default(nil)
+          attribute? :user_data_base64,                      Types::String.optional.default(nil)
+          attribute? :tags,                                  Types::Hash.default({}.freeze)
+        end
+
+        # ── FluxJitController — breathable FluxCD controller pool ────────
+        class FluxJitControllerConfig < Config
+          attribute  :name,                                  Types::String
+          attribute? :profile,                               Types::Coercible::Symbol.default(:karpenter_general)
+          attribute  :image_id,                              Types::String
+          attribute  :instance_profile_arn,                  Types::String
+          attribute  :security_group_ids,                    Types::Array.of(Types::String)
+          attribute  :subnet_ids,                            Types::Array.of(Types::String)
+          attribute? :min_size,                              Types::Integer.default(1)
+          attribute? :max_size,                              Types::Integer.default(3)
+          attribute? :desired_capacity,                      Types::Integer.default(1)
+          attribute? :node_labels,                           Types::Hash.default({ 'role' => 'flux-system' }.freeze)
+          attribute? :node_taints,                           Types::Array.default(
+            [{ key: 'dedicated', value: 'flux-system', effect: 'NoSchedule' }].freeze,
+          )
+          attribute? :lambda_drain_arn,                      Types::String.optional.default(nil)
+          attribute? :git_repo_url,                          Types::String.optional.default(nil)
+          attribute? :key_name,                              Types::String.optional.default(nil)
+          attribute? :user_data_base64,                      Types::String.optional.default(nil)
+          attribute? :tags,                                  Types::Hash.default({}.freeze)
+        end
       end
     end
   end
