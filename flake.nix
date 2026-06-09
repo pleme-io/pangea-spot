@@ -2,12 +2,11 @@
   description = "Pangea spot-instance architecture pack — typed profiles, allocation strategies, interruption handlers";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
+    nixpkgs.follows = "substrate/nixpkgs";
     ruby-nix.url = "github:inscapist/ruby-nix";
     flake-utils.url = "github:numtide/flake-utils";
     substrate = {
       url = "github:pleme-io/substrate";
-      inputs.nixpkgs.follows = "nixpkgs";
     };
     forge = {
       url = "github:pleme-io/forge";
