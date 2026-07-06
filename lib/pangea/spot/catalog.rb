@@ -67,6 +67,28 @@ module Pangea
           notes: 'Maximum capacity spread. 100% spot. Ephemeral wake-build-sleep cycles.',
         }.freeze,
 
+        # The amd64 (x86_64-linux) mirror of :beefy_spot — 12 pools across
+        # c7i/c7a/m7i/m7a/c6i/m6i × 8xl/16xl. Intel (i) + AMD (a) diversified
+        # so the native x86 build lane never starves. 100% spot, no OD floor.
+        # Cost: c7i.16xl spot ≈ $1.20/hr; a 30-min build cycle ≈ $0.60.
+        # Interruption rate: <5% for c7i/m7i.8xl in us-east-1 (2026-04).
+        beefy_spot_amd64: {
+          category: :nix_builder,
+          instance_types: %w[
+            c7i.16xlarge c7i.8xlarge
+            c7a.16xlarge c7a.8xlarge
+            m7i.16xlarge m7i.8xlarge
+            m7a.16xlarge m7a.8xlarge
+            c6i.16xlarge c6i.8xlarge
+            m6i.16xlarge m6i.8xlarge
+          ].freeze,
+          recommended_allocation: :capacity_optimized,
+          on_demand_base_capacity: 0,
+          on_demand_percentage_above_base: 0,
+          spot_max_price: '2.50',
+          notes: 'Native x86_64-linux lane. 12 Intel+AMD pools. 100% spot.',
+        }.freeze,
+
         # Conservative — 6 pools + 1 on-demand base + 20% OD above.
         # Guaranteed wake even if all spot pools dry.
         balanced: {
@@ -96,6 +118,23 @@ module Pangea
           on_demand_percentage_above_base: 0,
           spot_max_price: '3.00',
           notes: 'Large Nix closures, heavy linkers. 256GB+ RAM on 16xl.',
+        }.freeze,
+
+        # The amd64 mirror of :memory_heavy — r7i/r7a/r6i × 8xl/16xl. Big
+        # Go monorepo + FIPS-OpenSSL closures on 512GB+ RAM (r*.16xl). Intel
+        # (i) + AMD (a) diversified. 100% spot, no OD floor.
+        memory_heavy_amd64: {
+          category: :nix_builder,
+          instance_types: %w[
+            r7i.16xlarge r7i.8xlarge
+            r7a.16xlarge r7a.8xlarge
+            r6i.16xlarge r6i.8xlarge
+          ].freeze,
+          recommended_allocation: :capacity_optimized,
+          on_demand_base_capacity: 0,
+          on_demand_percentage_above_base: 0,
+          spot_max_price: '3.00',
+          notes: 'Native x86_64-linux memory lane. Big Go/FIPS closures. 100% spot.',
         }.freeze,
 
         legacy: {

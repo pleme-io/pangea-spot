@@ -57,8 +57,17 @@ RSpec.describe Pangea::Spot::Catalog do
   describe '.in_category' do
     it 'returns only profiles in the named category' do
       nix = described_class.in_category(:nix_builder)
-      expect(nix.keys).to include(:beefy_spot, :balanced, :legacy)
+      expect(nix.keys).to include(
+        :beefy_spot, :balanced, :legacy,
+        :beefy_spot_amd64, :memory_heavy_amd64,
+      )
       nix.values.each { |p| expect(p[:category]).to eq(:nix_builder) }
+    end
+
+    it 'nix_builder spans both arches (arm64 + amd64 mirrors)' do
+      nix = described_class.in_category(:nix_builder)
+      expect(nix.keys).to include(:beefy_spot, :memory_heavy)            # arm64
+      expect(nix.keys).to include(:beefy_spot_amd64, :memory_heavy_amd64) # amd64
     end
 
     it 'k8s_workers spans ≥5 profiles' do
@@ -103,6 +112,25 @@ RSpec.describe Pangea::Spot::Catalog do
       out = described_class.resolve({ 'instance_type_profile' => 'p4d_spot' })
       expect(out[:allocation_strategy]).to eq(:capacity_optimized)
       expect(out[:instance_types]).to eq(%w[p4d.24xlarge p4de.24xlarge])
+    end
+
+    it 'beefy_spot_amd64 is the native x86 nix_builder mirror (100% spot)' do
+      out = described_class.resolve({ 'instance_type_profile' => 'beefy_spot_amd64' })
+      expect(out[:category]).to eq(:nix_builder)
+      expect(out[:allocation_strategy]).to eq(:capacity_optimized)
+      expect(out[:on_demand_base_capacity]).to eq(0)
+      expect(out[:on_demand_percentage_above_base]).to eq(0)
+      expect(out[:instance_types]).to include('c7i.16xlarge', 'c7a.16xlarge', 'm7i.16xlarge')
+      # x86 only — never a Graviton (arm64) family in the amd64 lane
+      expect(out[:instance_types].none? { |t| t.match?(/\d+gd?\./) }).to eq(true)
+    end
+
+    it 'memory_heavy_amd64 targets amd64 r-family for big Go/FIPS closures' do
+      out = described_class.resolve({ 'instance_type_profile' => 'memory_heavy_amd64' })
+      expect(out[:category]).to eq(:nix_builder)
+      expect(out[:allocation_strategy]).to eq(:capacity_optimized)
+      expect(out[:instance_types]).to include('r7i.16xlarge', 'r7a.16xlarge', 'r6i.16xlarge')
+      expect(out[:instance_types].none? { |t| t.match?(/\d+gd?\./) }).to eq(true)
     end
   end
 end
