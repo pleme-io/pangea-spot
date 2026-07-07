@@ -89,6 +89,60 @@ module Pangea
           notes: 'Native x86_64-linux lane. 12 Intel+AMD pools. 100% spot.',
         }.freeze,
 
+        # ── TIME-FLOOR builder pools (objective: MINIMUM build time) ──────
+        # Distinct from :beefy_spot* (which floor on COST — the cheapest small
+        # deep pool). A build pool's bottleneck is parallel-compile width +
+        # RAM for a never-touch-disk RAMDISK, so the time-floor pools reach for
+        # the BIGGEST latest-gen instances (24xl/48xl = 96–192 vCPU, 192–384 GB
+        # RAM) — spot-diversified across ~10 families for capacity depth so the
+        # monster still lands fast + rarely reclaims. Scale-to-zero keeps it
+        # cost-controlled: you rent the monster only for the build minutes.
+        # 100% spot on every rung — no on-demand floor, ever.
+        #
+        # amd64 (x86_64-linux) — the native ARC-runner / sui build target.
+        #   compute (c7i/c7a) up to 48xl = 192 vCPU for parallel derivations +
+        #   Go package compile; memory (m7i/m7a) 24xl/48xl for a big RAMDISK;
+        #   local-NVMe (c6id/m6id) 24xl for store/scratch overflow. Intel+AMD
+        #   diversified so a native x86 monster never starves.
+        # Cost: c7i.48xl spot ≈ $3.60/hr; a 15-min build ≈ $0.90 (idle: $0).
+        nix_builder_timefloor_amd64: {
+          category: :nix_builder,
+          instance_types: %w[
+            c7i.48xlarge c7i.24xlarge
+            c7a.48xlarge c7a.24xlarge
+            m7i.48xlarge m7i.24xlarge
+            m7a.48xlarge m7a.24xlarge
+            c6id.32xlarge c6id.24xlarge
+            m6id.32xlarge m6id.24xlarge
+          ].freeze,
+          recommended_allocation: :capacity_optimized,
+          on_demand_base_capacity: 0,
+          on_demand_percentage_above_base: 0,
+          spot_max_price: '8.00',
+          notes: 'TIME-FLOOR: biggest latest-gen x86 (96–192 vCPU, 192–384 GB). ' \
+                 'Rent-the-monster-for-the-build-minute; scale-to-zero at idle. 100% spot.',
+        }.freeze,
+
+        # arm64 (aarch64-linux) mirror — Graviton c8g/m8g 48xl + c7gd/m7gd
+        # local-NVMe 16xl (Graviton tops out at 48xl on c8g/m8g / 16xl on the
+        # d-suffix; still 96–192 vCPU on the 48xl). 100% spot.
+        nix_builder_timefloor_arm64: {
+          category: :nix_builder,
+          instance_types: %w[
+            c8g.48xlarge c8g.24xlarge
+            m8g.48xlarge m8g.24xlarge
+            c7g.16xlarge c7g.8xlarge
+            m7g.16xlarge m7g.8xlarge
+            c7gd.16xlarge c7gd.8xlarge
+            m7gd.16xlarge m7gd.8xlarge
+          ].freeze,
+          recommended_allocation: :capacity_optimized,
+          on_demand_base_capacity: 0,
+          on_demand_percentage_above_base: 0,
+          spot_max_price: '8.00',
+          notes: 'TIME-FLOOR arm64: biggest Graviton (up to 192 vCPU on c8g/m8g.48xl). 100% spot.',
+        }.freeze,
+
         # Conservative — 6 pools + 1 on-demand base + 20% OD above.
         # Guaranteed wake even if all spot pools dry.
         balanced: {
